@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VioDo - Premium TODO App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        violet: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            800: '#5b21b6',
+                            900: '#4c1d95',
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'float-2': 'float 5s ease-in-out infinite 1s',
+                        'float-3': 'float 4s ease-in-out infinite 2s',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                        'bounce-slow': 'bounce 4s infinite',
+                        'spin-slow': 'spin 20s linear infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .task-item:hover .task-actions {
+            opacity: 1;
+        }
+        
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.5s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .blob {
+            filter: blur(40px);
+            opacity: 0.2;
+        }
+        
+        .interactive {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .interactive:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.3);
+        }
+        
+        .interactive:active {
+            transform: translateY(0);
+        }
+        
+        .category-icon {
+            transition: all 0.3s ease;
+        }
+        
+        .category-icon:hover {
+            transform: scale(1.2) rotate(10deg);
+        }
+        
+        .floating-shapes {
+            pointer-events: none;
+        }
+        
+        .shape {
+            position: absolute;
+            opacity: 0.7;
+            mix-blend-mode: multiply;
+        }
+    </style>
+</head>
+<body class="bg-violet-50 min-h-screen font-sans overflow-x-hidden">
+    <!-- Animated background elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none floating-shapes">
+        <div class="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-violet-300 blob animate-float"></div>
+        <div class="absolute top-1/3 right-1/4 w-72 h-72 rounded-full bg-violet-400 blob animate-float-2"></div>
+        <div class="absolute bottom-1/4 left-1/3 w-60 h-60 rounded-full bg-violet-500 blob animate-float-3"></div>
+        
+        <!-- Floating shapes -->
+        <div class="shape w-20 h-20 bg-violet-200 rounded-full top-1/5 right-1/6 animate-bounce-slow"></div>
+        <div class="shape w-16 h-16 bg-violet-300 rounded-lg top-1/3 left-1/4 animate-wiggle"></div>
+        <div class="shape w-24 h-24 bg-violet-400 rounded-full bottom-1/4 right-1/5 animate-spin-slow"></div>
+        <div class="shape w-12 h-12 bg-violet-500 rounded-lg top-2/3 left-1/3 animate-pulse-slow"></div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8 relative z-10">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="interactive">
+                <h1 class="text-4xl font-bold text-violet-900">Violet TaskMaster</h1>
+                <p class="text-violet-600">Your premium productivity companion</p>
+            </div>
+            <div class="flex items-center space-x-4 interactive">
+                <div class="relative">
+                    <svg class="w-16 h-16">
+                        <circle class="text-violet-200" stroke-width="8" stroke="currentColor" fill="transparent" r="24" cx="32" cy="32" />
+                        <circle class="text-violet-700 progress-ring__circle" stroke-width="8" stroke-dasharray="150.796" stroke-dashoffset="30" stroke-linecap="round" stroke="currentColor" fill="transparent" r="24" cx="32" cy="32" />
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-violet-900 font-bold text-sm">80%</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Task Input Section -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-xl p-6 border border-violet-100 interactive">
+                <div class="flex items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-violet-800">Add New Task</h2>
+                    <div class="ml-auto flex space-x-2">
+                        <button id="toggle-view" class="px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm hover:bg-violet-200 transition interactive">
+                            <i class="fas fa-list mr-1"></i> List
+                        </button>
+                        <button class="px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm hover:bg-violet-200 transition interactive">
+                            <i class="fas fa-chart-pie mr-1"></i> Stats
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex space-x-4">
+                        <div class="flex-1">
+                            <label class="block text-violet-700 mb-2">Task Name</label>
+                            <input type="text" id="task-input" class="w-full px-4 py-3 rounded-lg border border-violet-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition interactive" placeholder="What needs to be done?">
+                        </div>
+                        <div class="w-40">
+                            <label class="block text-violet-700 mb-2">Category</label>
+                            <select id="task-category" class="w-full px-4 py-3 rounded-lg border border-violet-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition appearance-none bg-white interactive">
+                                <option value="general">General</option>
+                                <option value="work">Work</option>
+                                <option value="personal">Personal</option>
+                                <option value="exercise">Exercise</option>
+                                <option value="health">Health</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center">
+                        <div class="mr-4">
+                            <label class="block text-violet-700 mb-2">Priority</label>
+                            <div class="flex space-x-2">
+                                <button class="priority-btn px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm hover:bg-violet-200 transition interactive" data-priority="low">
+                                    Low
+                                </button>
+                                <button class="priority-btn px-3 py-1 rounded-full bg-violet-600 text-white text-sm hover:bg-violet-700 transition interactive" data-priority="medium">
+                                    Medium
+                                </button>
+                                <button class="priority-btn px-3 py-1 rounded-full bg-violet-100 text-violet-700 text-sm hover:bg-violet-200 transition interactive" data-priority="high">
+                                    High
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-violet-700 mb-2">Activity Score</label>
+                            <div class="flex items-center">
+                                <input type="range" id="activity-score" min="1" max="10" value="5" class="w-24 mr-2 interactive">
+                                <span id="score-value" class="text-violet-700 font-medium">5</span>
+                            </div>
+                        </div>
+                        
+                        <button id="add-task" class="ml-auto px-6 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-lg font-medium transition flex items-center interactive">
+                            <i class="fas fa-plus mr-2"></i> Add Task
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Exercise Options (visible when exercise category is selected) -->
+                <div id="exercise-options" class="hidden bg-violet-50 p-4 rounded-lg mb-6">
+                    <h3 class="text-violet-800 font-medium mb-3">Exercise Details</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-violet-700 text-sm mb-1">Type</label>
+                            <select class="w-full px-3 py-2 rounded-lg border border-violet-200 text-sm interactive">
+                                <option>Running</option>
+                                <option>Cycling</option>
+                                <option>Swimming</option>
+                                <option>Weight Training</option>
+                                <option>Yoga</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-violet-700 text-sm mb-1">Duration (min)</label>
+                            <input type="number" class="w-full px-3 py-2 rounded-lg border border-violet-200 text-sm interactive" value="30">
+                        </div>
+                        <div>
+                            <label class="block text-violet-700 text-sm mb-1">Intensity</label>
+                            <select class="w-full px-3 py-2 rounded-lg border border-violet-200 text-sm interactive">
+                                <option>Low</option>
+                                <option selected>Medium</option>
+                                <option>High</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-violet-700 text-sm mb-1">Calories</label>
+                            <input type="number" class="w-full px-3 py-2 rounded-lg border border-violet-200 text-sm interactive" placeholder="Estimate">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Task List -->
+                <div class="mt-6">
+                    <h2 class="text-2xl font-semibold text-violet-800 mb-4">Your Tasks</h2>
+                    <div id="task-list" class="space-y-3">
+                        <!-- Tasks will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stats and Tracking Section -->
+            <div class="bg-white rounded-2xl shadow-xl p-6 border border-violet-100 interactive">
+                <h2 class="text-2xl font-semibold text-violet-800 mb-6">Activity Tracking</h2>
+                
+                <!-- Category Graphics -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-violet-700 mb-4">Task Categories</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="category-card bg-violet-50 p-4 rounded-xl text-center interactive">
+                            <div class="category-icon w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-pulse-slow">
+                                <i class="fas fa-briefcase text-violet-600 text-2xl"></i>
+                            </div>
+                            <span class="text-violet-800 font-medium">Work</span>
+                            <div class="text-violet-500 text-sm">8 tasks</div>
+                        </div>
+                        <div class="category-card bg-violet-50 p-4 rounded-xl text-center interactive">
+                            <div class="category-icon w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-bounce-slow">
+                                <i class="fas fa-user text-violet-600 text-2xl"></i>
+                            </div>
+                            <span class="text-violet-800 font-medium">Personal</span>
+                            <div class="text-violet-500 text-sm">6 tasks</div>
+                        </div>
+                        <div class="category-card bg-violet-50 p-4 rounded-xl text-center interactive">
+                            <div class="category-icon w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-wiggle">
+                                <i class="fas fa-dumbbell text-violet-600 text-2xl"></i>
+                            </div>
+                            <span class="text-violet-800 font-medium">Exercise</span>
+                            <div class="text-violet-500 text-sm">5 tasks</div>
+                        </div>
+                        <div class="category-card bg-violet-50 p-4 rounded-xl text-center interactive">
+                            <div class="category-icon w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-spin-slow">
+                                <i class="fas fa-heartbeat text-violet-600 text-2xl"></i>
+                            </div>
+                            <span class="text-violet-800 font-medium">Health</span>
+                            <div class="text-violet-500 text-sm">3 tasks</div>
+                        </div>
+                        <div class="category-card bg-violet-50 p-4 rounded-xl text-center interactive">
+                            <div class="category-icon w-16 h-16 bg-violet-100 rounded-full flex items-center justify-center mx-auto mb-2 animate-float">
+                                <i class="fas fa-tasks text-violet-600 text-2xl"></i>
+                            </div>
+                            <span class="text-violet-800 font-medium">General</span>
+                            <div class="text-violet-500 text-sm">2 tasks</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Activity Score -->
+                <div class="mb-8">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-medium text-violet-700">Today's Activity</h3>
+                        <span class="text-violet-600 font-medium">65/100</span>
+                    </div>
+                    <div class="w-full bg-violet-100 rounded-full h-3 interactive">
+                        <div class="bg-violet-600 h-3 rounded-full" style="width: 65%"></div>
+                    </div>
+                </div>
+                
+                <!-- Weekly Progress -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-violet-700 mb-4">Weekly Progress</h3>
+                    <div class="flex justify-between h-40 items-end">
+                        <div class="flex flex-col items-center interactive">
+                            <div class="w-8 bg-violet-300 rounded-t-md hover:bg-violet-400 transition" style="height: 30%"></div>
+                            <span class="text-xs text-violet-600 mt-1">Mon</span>
+                        </div>
+                        <div class="flex flex-col items-center interactive">
+                            <div class="w-8 bg-violet-400 rounded-t-md hover:bg-violet-500 transition" style="height: 50%"></div>
+                            <span class="text-xs text-violet-600 mt-1">Tue</span>
+                        </div>
+                        <div class="flex flex-col items-center interactive">
+                            <div class="w-8 bg-violet-500 rounded-t-md hover:bg-violet-600 transition" style="height: 70%"></div>
+                            <span class="text-xs text-violet-600 mt-1">Wed</span>
+                        </div>
+                        <div class="flex flex-col items-center interactive">
+                            <div class="w-8 bg-violet-600 rounded-t-md hover:bg-violet-700 transition" style="height: 90%"></div>
+                            <span class="text-xs text-violet-600 mt-1">Thu</span>
+                        </div>
+                        <div class="flex flex-col items-center interactive">
+                            <div class="w-8 bg-violet-400 rounded-t-md hover:bg-violet-500 transition" style="height: 50%"></div>
+                            <span class="text-xs text-violet-600 mt-1">Fri</span>
+                        </div>
+                        <div class="flex flex-col items-center interactive">
+                            <div class="w-8 bg-violet-300 rounded-t-md hover:bg-violet-400 transition" style="height: 30%"></div>
+                            <span class="text-xs text-violet-600 mt-1">Sat</span>
+                        </div>
+                        <div class="flex flex-col items-center interactive">
+                            <div class="w-8 bg-violet-200 rounded-t-md hover:bg-violet-300 transition" style="height: 10%"></div>
+                            <span class="text-xs text-violet-600 mt-1">Sun</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div>
+                    <h3 class="text-lg font-medium text-violet-700 mb-4">Recent Activity</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start interactive">
+                            <div class="bg-violet-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-check text-violet-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-violet-800">Completed "Morning Run"</p>
+                                <p class="text-xs text-violet-500">2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start interactive">
+                            <div class="bg-violet-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-plus text-violet-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-violet-800">Added "Project Deadline"</p>
+                                <p class="text-xs text-violet-500">4 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start interactive">
+                            <div class="bg-violet-100 p-2 rounded-full mr-3">
+                                <i class="fas fa-trash text-violet-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-violet-800">Deleted "Old Task"</p>
+                                <p class="text-xs text-violet-500">Yesterday</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Task management
+            const taskInput = document.getElementById('task-input');
+            const taskCategory = document.getElementById('task-category');
+            const addTaskBtn = document.getElementById('add-task');
+            const taskList = document.getElementById('task-list');
+            const exerciseOptions = document.getElementById('exercise-options');
+            const activityScore = document.getElementById('activity-score');
+            const scoreValue = document.getElementById('score-value');
+            const priorityBtns = document.querySelectorAll('.priority-btn');
+            
+            let currentPriority = 'medium';
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            
+            // Add interactive effects to all interactive elements
+            document.querySelectorAll('.interactive').forEach(el => {
+                el.addEventListener('mousedown', function() {
+                    this.style.transform = 'translateY(1px)';
+                });
+                
+                el.addEventListener('mouseup', function() {
+                    this.style.transform = 'translateY(-3px)';
+                });
+                
+                el.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                });
+            });
+            
+            // Update activity score display
+            activityScore.addEventListener('input', function() {
+                scoreValue.textContent = this.value;
+            });
+            
+            // Handle priority selection
+            priorityBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    priorityBtns.forEach(b => {
+                        b.classList.remove('bg-violet-600', 'text-white');
+                        b.classList.add('bg-violet-100', 'text-violet-700');
+                    });
+                    
+                    this.classList.remove('bg-violet-100', 'text-violet-700');
+                    this.classList.add('bg-violet-600', 'text-white');
+                    currentPriority = this.dataset.priority;
+                });
+            });
+            
+            // Show/hide exercise options
+            taskCategory.addEventListener('change', function() {
+                if (this.value === 'exercise') {
+                    exerciseOptions.classList.remove('hidden');
+                } else {
+                    exerciseOptions.classList.add('hidden');
+                }
+            });
+            
+            // Add new task
+            addTaskBtn.addEventListener('click', function() {
+                const taskText = taskInput.value.trim();
+                if (taskText) {
+                    const newTask = {
+                        id: Date.now(),
+                        text: taskText,
+                        category: taskCategory.value,
+                        priority: currentPriority,
+                        score: activityScore.value,
+                        completed: false,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    tasks.push(newTask);
+                    saveTasks();
+                    renderTasks();
+                    taskInput.value = '';
+                    activityScore.value = 5;
+                    scoreValue.textContent = '5';
+                    
+                    // Show animation for new task
+                    const lastTask = taskList.lastElementChild;
+                    if (lastTask) {
+                        lastTask.classList.add('animate-pulse');
+                        setTimeout(() => {
+                            lastTask.classList.remove('animate-pulse');
+                        }, 1000);
+                    }
+                }
+            });
+            
+            // Allow adding task with Enter key
+            taskInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTaskBtn.click();
+                }
+            });
+            
+            // Render tasks
+            function renderTasks() {
+                taskList.innerHTML = '';
+                
+                if (tasks.length === 0) {
+                    taskList.innerHTML = `
+                        <div class="text-center py-8 text-violet-500">
+                            <i class="fas fa-tasks text-4xl mb-2"></i>
+                            <p>No tasks yet. Add your first task!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                tasks.forEach(task => {
+                    const taskItem = document.createElement('div');
+                    taskItem.className = `task-item bg-white rounded-lg p-4 border border-violet-100 hover:border-violet-200 transition flex items-start relative interactive ${task.completed ? 'opacity-70' : ''}`;
+                    taskItem.dataset.id = task.id;
+                    
+                    const priorityColor = task.priority === 'high' ? 'bg-violet-700' : 
+                                         task.priority === 'medium' ? 'bg-violet-500' : 'bg-violet-300';
+                    
+                    const categoryIcon = task.category === 'work' ? 'fa-briefcase' :
+                                         task.category === 'personal' ? 'fa-user' :
+                                         task.category === 'exercise' ? 'fa-dumbbell' :
+                                         task.category === 'health' ? 'fa-heartbeat' : 'fa-tasks';
+                    
+                    taskItem.innerHTML = `
+                        <div class="flex items-start w-full">
+                            <button class="complete-btn mr-3 mt-1 w-6 h-6 rounded-full border-2 border-violet-300 flex items-center justify-center hover:border-violet-500 transition ${task.completed ? 'bg-violet-500 border-violet-500' : ''}">
+                                ${task.completed ? '<i class="fas fa-check text-white text-xs"></i>' : ''}
+                            </button>
+                            <div class="flex-1">
+                                <div class="flex items-center">
+                                    <span class="text-violet-800 font-medium ${task.completed ? 'line-through' : ''}">${task.text}</span>
+                                    <span class="ml-2 px-2 py-1 text-xs rounded-full ${priorityColor} text-white">${task.priority}</span>
+                                </div>
+                                <div class="flex items-center mt-1 text-sm">
+                                    <i class="fas ${categoryIcon} text-violet-400 mr-2"></i>
+                                    <span class="text-violet-500 mr-3 capitalize">${task.category}</span>
+                                    <span class="text-violet-400">
+                                        <i class="fas fa-bolt mr-1"></i> ${task.score}/10
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="task-actions opacity-0 transition flex space-x-2">
+                                <button class="edit-btn p-2 text-violet-400 hover:text-violet-600 rounded-full hover:bg-violet-50 interactive">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
+                                <button class="delete-btn p-2 text-violet-400 hover:text-violet-600 rounded-full hover:bg-violet-50 interactive">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    taskList.appendChild(taskItem);
+                });
+                
+                // Add event listeners to all task buttons
+                document.querySelectorAll('.complete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const taskId = parseInt(this.closest('.task-item').dataset.id);
+                        toggleTaskComplete(taskId);
+                    });
+                });
+                
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const taskId = parseInt(this.closest('.task-item').dataset.id);
+                        deleteTask(taskId);
+                    });
+                });
+                
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const taskId = parseInt(this.closest('.task-item').dataset.id);
+                        editTask(taskId);
+                    });
+                });
+            }
+            
+            // Toggle task completion
+            function toggleTaskComplete(taskId) {
+                tasks = tasks.map(task => {
+                    if (task.id === taskId) {
+                        return {...task, completed: !task.completed};
+                    }
+                    return task;
+                });
+                saveTasks();
+                renderTasks();
+            }
+            
+            // Delete task
+            function deleteTask(taskId) {
+                tasks = tasks.filter(task => task.id !== taskId);
+                saveTasks();
+                renderTasks();
+                
+                // Show delete animation
+                const deletedItem = document.querySelector(`.task-item[data-id="${taskId}"]`);
+                if (deletedItem) {
+                    deletedItem.classList.add('opacity-0', 'translate-x-10', 'transition', 'duration-300');
+                    setTimeout(() => {
+                        renderTasks();
+                    }, 300);
+                }
+            }
+            
+            // Edit task (placeholder - would need a modal or inline edit)
+            function editTask(taskId) {
+                alert('Edit functionality would be implemented here with a modal or inline edit form.');
+            }
+            
+            // Save tasks to localStorage
+            function saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+            
+            // Initial render
+            renderTasks();
+            
+            // Toggle view between list and grid
+            document.getElementById('toggle-view').addEventListener('click', function() {
+                const isList = taskList.classList.contains('grid');
+                
+                if (isList) {
+                    // Switch to list view
+                    taskList.classList.remove('grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-4');
+                    taskList.classList.add('space-y-3');
+                    this.innerHTML = '<i class="fas fa-list mr-1"></i> List';
+                } else {
+                    // Switch to grid view
+                    taskList.classList.remove('space-y-3');
+                    taskList.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-4');
+                    this.innerHTML = '<i class="fas fa-th-large mr-1"></i> Grid';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
